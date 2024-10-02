@@ -5,23 +5,23 @@ from bs4 import BeautifulSoup
 address = []
 last_updated = []
 Categories = []
-description = []
+descriptions = []
 phone = []
 email = []
 url = 'https://www.yellowpagesnepal.com/agricultural-equipment-and-implements'
 
 def extract_info(soup):
     addresses = soup.find_all('span', itemprop="streetAddress")
-    descriptions = soup.find_all('div', class_="details info-row")
-    return [a.get_text(strip=True) for a in addresses], [d.get_text(strip=True) for d in descriptions]
+    
+    return [a.get_text(strip=True) for a in addresses]
 
 def extract_business_info(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
-    addresses, descriptions  = extract_info(soup)
-    for addr, desc, in zip(addresses, descriptions,):
+    addresses = extract_info(soup)
+    for addr in zip(addresses):
         address.append(addr)
-        description.append(desc)
+       
           
     next_page = soup.find('a', string="Next")
     if next_page:
@@ -29,12 +29,15 @@ def extract_business_info(url):
         extract_business_info(url)
 
 extract_business_info(url)
-
 ad =pd.read_csv('sal.csv')
 
-for x in ad['Businesslink']:
-    r = requests.get(x)
-    soup = BeautifulSoup(r.content, 'html.parser')
+
+
+def main():
+    
+    for x in ad['Businesslink']:
+        r = requests.get(x)
+        soup = BeautifulSoup(r.content, 'html.parser')
 
     # Extract "Last Updated" info
     updated_date = soup.find('div', class_="updated-date float-left")
@@ -45,7 +48,7 @@ for x in ad['Businesslink']:
 
     # Extract phone and email
     info = soup.find('div', class_="contact-content")
-    
+
     # Extract phone
     if info is not None:
         ph = info.find('p')
@@ -76,17 +79,29 @@ for x in ad['Businesslink']:
                 Categories.append(cate.get_text(strip=True))
     else:
         Categories.append(None)
+    
+        desc_div = soup.find_all('div', id="myTabContent")
+        if desc_div:
+            desc = desc_div.find('p', {'itemprop': "description"})
+            if desc:
+                descriptions.append(desc.get_text(strip=True))
+            else:
+                descriptions.append(None)
+        else:
+            descriptions.append(None)
+            
+main()
 
-
+        
 
 # Ensure all lists are of the same length
-max_length = max(len(address), len(last_updated), len(Categories), len(description), len(phone), len(email))
+max_length = max(len(address), len(last_updated), len(Categories), len(descriptions), len(phone), len(email))
 
 # Padding lists to ensure they have the same length
 address += [None] * (max_length - len(address))
 last_updated += [None] * (max_length - len(last_updated))
 Categories += [None] * (max_length - len(Categories))
-description += [None] * (max_length - len(description))
+descriptions += [None] * (max_length - len(descriptions))
 phone += [None] * (max_length - len(phone))
 email += [None] * (max_length - len(email))
 
@@ -95,10 +110,11 @@ df = pd.DataFrame({
     'Address': address,
     'Last Updated': last_updated,
     'Categories': Categories,
-    'Description': description,
+    'Description': descriptions,
     'Phone': phone,
     'Email': email,
 })
+
 
 final_df = pd.concat([ad, df], axis=1)
 
