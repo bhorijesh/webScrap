@@ -87,7 +87,7 @@ def main(ad):
             desc = desc_div.find('div', class_="description mb-5 pt-3")
             if desc:
                 description= desc.find('p', {'itemprop':"description"})
-                if descriptions:
+                if description:
                     descriptions.append(description.get_text(strip=True))
                 else:
                     descriptions.append(None)
@@ -125,7 +125,7 @@ df = pd.DataFrame({
 
 final_df = pd.concat([ad, df], axis=1)
 
-final_df.to_csv('final3.csv',index=False)
+final_df.to_csv('final4.csv',index=False)
 
 
 
